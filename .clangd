@@ -1,7 +1,7 @@
 CompileFlags:
   Add: [
     "-std=c++23",
-    "-Isrc",
+    "-Ijan",
     "-g",
     "-fsanitize=address,undefined",
     "-Wall",
