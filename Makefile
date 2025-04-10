@@ -28,12 +28,19 @@ CXXFLAGS := $(BASE_FLAGS) $(DEBUG_FLAGS) $(WARNING_FLAGS) $(DEP_FLAGS)
 LDFLAGS := $(DEBUG_FLAGS) 
 
 # Additional libraries
-SDL_PKGS := sdl3 sdl3-image sdl3-ttf 
-SDL_CFLAGS := $(shell pkg-config --cflags $(SDL_PKGS))
-SDL_LDFLAGS := $(shell pkg-config --libs $(SDL_PKGS))
+EXT_LIBS := sdl3
 
-CXXFLAGS += $(SDL_CFLAGS)
-LDFLAGS += $(SDL_LDFLAGS)
+# Only call pkg-config if at least one external library is specified
+ifeq ($(EXT_LIBS),)
+	EXT_CFLAGS :=
+	EXT_LDFLAGS :=
+else
+	EXT_CFLAGS := $(shell pkg-config --cflags $(EXT_LIBS))
+	EXT_LDFLAGS := $(shell pkg-config --libs $(EXT_LIBS))
+endif
+
+CXXFLAGS += $(EXT_CFLAGS)
+LDFLAGS += $(EXT_LDFLAGS)
 
 ## TARGETS
 # Phony targets aren't treated as files
@@ -55,7 +62,7 @@ $(EXE): $(OBJ_FILES) | $(BIN_DIR)
 	@dsymutil $@ 2>/dev/null || true  # macOS only, fails silently on other OS
 
 # Pattern rule for .s files
-$(OBJ_DIR)/%.s: $(SRC_DIR)/%.$(CX) | $(BIN_DIR)
+$(OBJ_DIR)/%.s: $(SRC_DIR)/%.$(CX) | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -S $< -o $@
 
 # Pattern rule for .o files
