@@ -1,0 +1,97 @@
+## Blueprint Makefile
+SRC_NAMES := b03_01
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := bin
+
+## select compiler
+# CXX := clang
+CXX := clang++
+# CX := c
+CX := cpp
+
+## create vars for target, src and object files
+EXE := $(BIN_DIR)/a.out
+SRC_FILES := $(addprefix $(SRC_DIR)/, $(addsuffix .$(CX), $(SRC_NAMES)))
+OBJ_FILES := $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(SRC_NAMES)))
+ASM_FILES := $(addprefix $(BIN_DIR)/, $(addsuffix .s, $(SRC_NAMES)))
+
+# Libraries
+BREW_PREFIX := /opt/homebrew/Cellar
+SDL3_PREFIX:= $(BREW_PREFIX)/sdl3/3.2.10
+SDL3_INCLUDE:= -I$(SDL3_PREFIX)/include
+SDL3_LIB:= -L$(SDL3_PREFIX)/lib -lsdl3
+
+# Flags
+RELEASE_FLAGS :=
+DEBUG_FLAGS := -Wextra -g -fsanitize=address
+
+# By default, build debug
+MODE ?= debug
+ifeq ($(MODE), release)
+    FLAGS := $(RELEASE_FLAGS)
+else
+    FLAGS := $(DEBUG_FLAGS)
+endif
+
+# -MMD -MP to create dependency files -> these are then included
+# If header changes, trigger recompilation of dependent source files
+CPPFLAGS := -I$(SRC_DIR)
+CXXFLAGS := -Wall -MMD -MP $(FLAGS)
+-include $(OBJ_FILES:.o=.d)
+LDFLAGS :=
+
+# Phony targets aren't treated as files
+.PHONY: all run asm clean
+
+# Default target, executed with 'make' command
+all: $(EXE)
+
+# Execute immediatelly after building
+run: $(EXE)
+	./$(EXE)
+
+asm: $(ASM_FILES)
+	@echo "Assembly files generated in $(BIN_DIR): $(ASM_FILES)"
+
+# Link all the objectfiles into an exe
+$(EXE): $(OBJ_FILES) | $(BIN_DIR)
+	$(CXX) $(LDFLAGS) $^ -o $@
+	# dsymutil $@
+	# @if [ "$(MODE)" = "release" ]; then dsymutil $@; fi
+
+# Pattern rule for .s files
+$(BIN_DIR)/%.s: $(SRC_DIR)/%.$(CX) | $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) -S $< -o $@
+
+# Pattern rule for .o files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.$(CX) | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Make sure directories exist
+$(OBJ_DIR) $(BIN_DIR):
+	mkdir -p $@
+
+# Clean for rebuilt - Using implicit variable RM (rm -f)
+clean:
+	@$(RM) -r $(OBJ_DIR) $(BIN_DIR)
+	echo "CompileFlags:" > .clangd
+	echo "  Add: [" >> .clangd
+	echo "    -I$(SRC_DIR)," >> .clangd
+	echo "    $(SDL3_INCLUDE)," >> .clangd
+	echo "  ]" >> .clangd
+
+	echo "/bin" > .gitignore
+	echo "/obj" >> .gitignore
+
+## Helper Legend
+# normal-prerequisites | order-only-prerequisites (no out of date check)
+
+## Automatic variables:
+# $^: all prerequisites
+# $<: first prerequisite
+# $@: target
+
+## Specifics
+# -MDD, -MP: create .d files for header deps
+# dsymutil: extract debug info into seperate file, Mac thing I think..
