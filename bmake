@@ -1,0 +1,52 @@
+SRC_NAMES := b03_01
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := bin
+
+## select compiler
+# CXX := clang
+CXX := clang++
+# CX := c
+CX := cpp
+
+## create vars for target, src and object files
+EXE := $(BIN_DIR)/a.out
+SRC_FILES := $(addprefix $(SRC_DIR)/, $(addsuffix .$(CX), $(SRC_NAMES)))
+OBJ_FILES := $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(SRC_NAMES)))
+
+CXXFLAGS := -Wall -Wextra -g -fsanitize=address
+# CXXFLAGS :=
+LDFLAGS := -fsanitize=address
+
+.PHONY: build run clean init
+
+build: $(EXE)
+
+# Execute immediatelly after building
+run: $(EXE)
+	./$(EXE)
+
+# Link all the objectfiles into an exe
+$(EXE): $(OBJ_FILES) | $(BIN_DIR)
+	$(CXX) $(LDFLAGS) $^ -o $@
+
+# Pattern rule for .o files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.$(CX) | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Create directories
+$(OBJ_DIR) $(BIN_DIR) $(SRC_DIR):
+	mkdir -p $@
+
+# Clean for rebuilt - Using implicit variable RM (rm -f)
+clean:
+	@$(RM) -r $(OBJ_DIR) $(BIN_DIR)
+
+init: $(OBJ_DIR) $(BIN_DIR) $(SRC_DIR)
+	echo "CompileFlags:" > .clangd
+	echo "  Add: [" >> .clangd
+	echo "    -I$(SRC_DIR)," >> .clangd
+	echo "  ]" >> .clangd
+
+	echo "/bin" > .gitignore
+	echo "/obj" >> .gitignore

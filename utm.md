@@ -1,7 +1,7 @@
 ## Basics
 - debian install with debian-de, xfce, ssh,
 - add group sudo
-- install build-essential, cmake, git, fzf
+- install build-essential, cmake, git, fzf, pkgconf
 - install spice-vdagent (clipboard sharing)
 
 # SSH
